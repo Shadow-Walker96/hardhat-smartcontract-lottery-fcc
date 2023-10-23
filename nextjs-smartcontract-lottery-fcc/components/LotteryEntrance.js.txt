@@ -1,0 +1,734 @@
+/*
+// 17:22:26 --- Introduction to calling functions in Next.js
+// we want to have a function to enter the Lottery
+import { useWeb3Contract} from "react-moralis"
+
+export default function LotteryEntrance() {
+    const { runContractFunction: enterRaffle } = useWeb3Contract({
+        abi: //,
+        contractAddress: //,
+        functionName: //,
+        params: {},
+        msgValue: //
+    })
+    return (
+        <div>
+            Hi from lottery entrance
+        </div>
+    )
+}
+*/
+
+/*
+// 17:26:30 --- Automatic Constant Value UI Updater
+// 
+
+import { useWeb3Contract} from "react-moralis"
+import { contractAddress, abi } from "../constants";
+
+export default function LotteryEntrance() {
+    // const { runContractFunction: enterRaffle } = useWeb3Contract({
+    //     abi: //,
+    //     contractAddress: //,
+    //     functionName: //,
+    //     params: {},
+    //     msgValue: //
+    // })
+    return (
+        <div>
+            Hello there!
+        </div>
+    )
+}
+*/
+
+
+/*
+
+// 17:38:37 --- runContractFunction
+// runContractFunction can read and send transaction
+
+import { useWeb3Contract} from "react-moralis"
+import { contractAddresses, abi } from "../constants"
+import { useMoralis } from "react-moralis"
+import { useEffect } from "react"
+
+export default function LotteryEntrance() {
+    /**
+     * @dev moralis knows the chainId that we are on bcos when we connect our frontend to our metamask wallet
+     * @dev all the information including the chainId is stored in the moralis provider, and the moralis provider
+     * @dev pass it down to all the components
+     */
+    const { chainId: chainIdHex, isWeb3Enabled } = useMoralis()
+    /**
+     * @dev chainIdHex pulls out the object from chainId
+     * @dev parseInt(chainIdHex) is converting it to an interger bcos chainIdHex is in Hex format
+     */
+    const chainId = parseInt(chainIdHex)
+    console.log(chainId)
+
+    /**
+     * @dev to check if the chainid exist in contractAddress
+     */
+    const raffleAddress = chainId in contractAddresses ? contractAddresses[chainId][0] : null
+
+    const { runContractFunction: getEntranceFee } = useWeb3Contract({
+        abi: abi,
+        contractAddress: raffleAddress,
+        functionName: "getEntranceFee",
+        params: {},
+    })
+
+    /**
+     * @dev useEffect helps to fetch data from our contract
+     * @dev we create a function called updateUi() bcos we cant call await in a useEffect
+     * @dev try to read the raffle entrance fee
+     * @dev isWeb3Enabled is in the dependency array bcos when the page first render isWeb3Enabled is 
+     * @dev set to false 
+     */
+    useEffect(() => {
+        if(isWeb3Enabled){
+            async function updateUi(){
+                const entranceFeeFromContract = await getEntranceFee()
+                console.log(entranceFeeFromContract);
+            }
+            updateUi()
+        }
+    },[isWeb3Enabled])
+
+    return (
+        <div>
+            Hi From Lottery Entrance!
+        </div>
+    )
+}
+
+*/
+
+/*
+
+// 17:45:58 --- useState
+// useState will display the ETH amount on the page
+
+/**
+ * @notice we import ethers to format the value of the entrance fee in terms of ETH
+ */
+import { useWeb3Contract } from "react-moralis"
+import { contractAddresses, abi } from "../constants"
+import { useMoralis } from "react-moralis"
+import { useEffect, useState } from "react"
+import { ethers } from "ethers"
+
+export default function LotteryEntrance() {
+    const { chainId: chainIdHex, isWeb3Enabled } = useMoralis()
+
+    const chainId = parseInt(chainIdHex)
+    console.log(chainId)
+
+    const raffleAddress = chainId in contractAddresses ? contractAddresses[chainId][0] : null
+    /**
+     * @dev useState will display the entrance fee on the page
+     */
+    const [entranceFee, setEntranceFee] = useState("0")
+
+    const { runContractFunction: getEntranceFee } = useWeb3Contract({
+        abi: abi,
+        contractAddress: raffleAddress,
+        functionName: "getEntranceFee",
+        params: {},
+    })
+
+    /**
+     * @dev setEntranceFee will update the state
+     * @dev 'ethers.utils.formatUnits' will format the entrance fee in terms of ETH i.e
+     * @dev setEntranceFee(ethers.utils.formatUnits(entranceFeeFromCall, "ether"))
+     * @dev '(await getEntranceFee()).toString()' we converted it from a bigNumber to
+     * @dev string
+     */
+    useEffect(() => {
+        if (isWeb3Enabled) {
+            async function updateUi() {
+                const entranceFeeFromCall = (await getEntranceFee()).toString()
+                setEntranceFee(ethers.utils.formatUnits(entranceFeeFromCall, "ether"))
+            }
+            updateUi()
+        }
+    }, [isWeb3Enabled])
+
+    /**
+     * @dev we display the entrance fee on the page
+     */
+    return (
+        <div>
+            Hi From Lottery Entrance!<div>Entrance Fee: {entranceFee} ETH</div>
+        </div>
+    )
+}
+
+
+*/
+
+/*
+
+// 17:49:50 --- Calling Functions in NextJS
+// we created a function to enter our raffle 
+
+import { useWeb3Contract } from "react-moralis"
+import { contractAddresses, abi } from "../constants"
+import { useMoralis } from "react-moralis"
+import { useEffect, useState } from "react"
+import { ethers } from "ethers"
+
+export default function LotteryEntrance() {
+    const { chainId: chainIdHex, isWeb3Enabled } = useMoralis()
+
+    const chainId = parseInt(chainIdHex)
+    console.log(chainId)
+
+    const raffleAddress = chainId in contractAddresses ? contractAddresses[chainId][0] : null
+
+    const [entranceFee, setEntranceFee] = useState("0")
+
+    /**
+     * @dev we enter our raffle
+     * @params msgValue is set to 'entranceFee'
+     */
+    const { runContractFunction: enterRaffle } = useWeb3Contract({
+        abi: abi,
+        contractAddress: raffleAddress,
+        functionName: "enterRaffle",
+        params: {},
+        msgValue: entranceFee,
+    })
+
+    const { runContractFunction: getEntranceFee } = useWeb3Contract({
+        abi: abi,
+        contractAddress: raffleAddress,
+        functionName: "getEntranceFee",
+        params: {},
+    })
+
+    /**
+    *@notice we remove 'ethers.utils.formatUnits(entranceFeeFromCall, "ether")' bcos we dont 
+    *@notice we dont want to mix server code with frontend code
+    */
+    useEffect(() => {
+        if (isWeb3Enabled) {
+            async function updateUi() {
+                const entranceFeeFromCall = (await getEntranceFee()).toString()
+                setEntranceFee(entranceFeeFromCall)
+            }
+            updateUi()
+        }
+    }, [isWeb3Enabled])
+
+    /**
+     * @dev we did a tinary operator that if 'raffleAddress' exists it should display a button
+     * @dev to enter the raffle, also display the entrance fee, else display No Raffle Address Detected
+     * @notice we format the entrance fee in terms of ETH
+     */
+    return (
+        <div>
+            Hi From Lottery Entrance!
+            {raffleAddress ? (
+                <div>
+                    <button
+                        onClick={async function () {
+                            enterRaffle()
+                        }}
+                    >
+                        Enter Raffle
+                    </button>
+                    Entrance Fee: {ethers.utils.formatUnits(entranceFee, "ethers")} ETH
+                </div>
+            ) : (
+                <div>No Raffle Address Detected</div>
+            )}
+        </div>
+    )
+}
+
+
+*/
+
+/*
+
+// 17:52:58 ---> useNotification
+// we want to display notifications to the user 
+
+/**
+ * @notice we import useNotification from 'web3uikit'
+ */
+
+import { useWeb3Contract } from "react-moralis"
+import { contractAddresses, abi } from "../constants"
+import { useMoralis } from "react-moralis"
+import { useEffect, useState } from "react"
+import { ethers } from "ethers"
+import { useNotification } from "web3uikit"
+
+export default function LotteryEntrance() {
+    const { chainId: chainIdHex, isWeb3Enabled } = useMoralis()
+
+    const chainId = parseInt(chainIdHex)
+    console.log(chainId)
+
+    const raffleAddress = chainId in contractAddresses ? contractAddresses[chainId][0] : null
+
+    const [entranceFee, setEntranceFee] = useState("0")
+
+    /**
+     * @dev we set dispatch to useNotification hook
+     */
+    const dispatch = useNotification()
+
+    const { runContractFunction: enterRaffle } = useWeb3Contract({
+        abi: abi,
+        contractAddress: raffleAddress,
+        functionName: "enterRaffle",
+        params: {},
+        msgValue: entranceFee,
+    })
+
+    const { runContractFunction: getEntranceFee } = useWeb3Contract({
+        abi: abi,
+        contractAddress: raffleAddress,
+        functionName: "getEntranceFee",
+        params: {},
+    })
+
+    useEffect(() => {
+        if (isWeb3Enabled) {
+            async function updateUi() {
+                const entranceFeeFromCall = (await getEntranceFee()).toString()
+                setEntranceFee(entranceFeeFromCall)
+            }
+            updateUi()
+        }
+    }, [isWeb3Enabled])
+
+    /**
+     * @dev handleSuccess adds one block comfirmation and it triggers the handleNewNotification function
+     * @dev handleNewNotification triggers the dispatch function with the objects params
+     */
+    const handleSuccess = async function(tx) {
+        await tx.wait(1)
+        handleNewNotification(tx)
+    }
+    const handleNewNotification = function () {
+        dispatch({
+            type: "info",
+            message: "Transaction Complete",
+            title: "Tx Notification",
+            position: "topR",
+            icon: "bell"
+        })
+    }
+    
+    return (
+        <div>
+            Hi From Lottery Entrance!
+            {raffleAddress ? (
+                <div>
+                    <button
+                        onClick={async function () {
+
+                            /**
+                             * @params 'onSuccess' is triggered when the transaction is not reverted
+                             */
+                            enterRaffle({
+                                onSuccess: handleSuccess,
+                                onError: (error) => console.log(error)
+                            })
+                        }}
+                    >
+                        Enter Raffle
+                    </button>
+                    Entrance Fee: {ethers.utils.formatUnits(entranceFee, "ether")} ETH
+                </div>
+            ) : (
+                <div>No Raffle Address Detected</div>
+            )}
+        </div>
+    )
+}
+
+
+*/
+
+
+/*
+
+// 17:58:05 ---> Reading & Displaying Contract Data
+// 
+
+/**
+ * @notice We want to display how many players in the lottery and recent winner
+ */
+
+import { useWeb3Contract } from "react-moralis"
+import { contractAddresses, abi } from "../constants"
+import { useMoralis } from "react-moralis"
+import { useEffect, useState } from "react"
+import { ethers } from "ethers"
+import { useNotification } from "web3uikit"
+
+export default function LotteryEntrance() {
+    const { chainId: chainIdHex, isWeb3Enabled } = useMoralis()
+
+    const chainId = parseInt(chainIdHex)
+    console.log(chainId)
+
+    const raffleAddress = chainId in contractAddresses ? contractAddresses[chainId][0] : null
+
+    const [entranceFee, setEntranceFee] = useState("0")
+
+    /**
+     * @dev state variable for numPlayers and recentWinner
+     */
+    const [numPlayers, setNumPlayers] = useState("0")
+    const [recentWinner, setRecentWinner] = useState("0")
+
+    const dispatch = useNotification()
+
+    const { runContractFunction: enterRaffle } = useWeb3Contract({
+        abi: abi,
+        contractAddress: raffleAddress,
+        functionName: "enterRaffle",
+        params: {},
+        msgValue: entranceFee,
+    })
+
+    const { runContractFunction: getEntranceFee } = useWeb3Contract({
+        abi: abi,
+        contractAddress: raffleAddress,
+        functionName: "getEntranceFee",
+        params: {},
+    })
+
+    /**
+     * @dev we send transaction for getNumberOfPlayers and getRecentWinner
+     */
+    const { runContractFunction: getNumberOfPlayers } = useWeb3Contract({
+        abi: abi,
+        contractAddress: raffleAddress,
+        functionName: "getNumberOfPlayers",
+        params: {},
+    })
+    const { runContractFunction: getRecentWinner } = useWeb3Contract({
+        abi: abi,
+        contractAddress: raffleAddress,
+        functionName: "getRecentWinner",
+        params: {},
+    })
+
+    useEffect(() => {
+        if (isWeb3Enabled) {
+            async function updateUi() {
+                const entranceFeeFromCall = (await getEntranceFee()).toString()
+                /**
+                 * @dev we fetch data to 'getNumberOfPlayers' and 'getRecentWinner'
+                 */
+                const numPlayersFromCall = (await getNumberOfPlayers()).toString()
+                const recentWinnerFromCall = await getRecentWinner()
+                setEntranceFee(entranceFeeFromCall)
+                setNumPlayers(numPlayersFromCall)
+                setRecentWinner(recentWinnerFromCall)
+            }
+            updateUi()
+        }
+    }, [isWeb3Enabled])
+
+    const handleSuccess = async function(tx) {
+        await tx.wait(1)
+        handleNewNotification(tx)
+    }
+    const handleNewNotification = function () {
+        dispatch({
+            type: "info",
+            message: "Transaction Complete",
+            title: "Tx Notification",
+            position: "topR",
+            icon: "bell"
+        })
+    }
+    
+    /**
+     * @dev we display to the user the Players and Recent Winner
+     */
+    return (
+        <div>
+            Hi From Lottery Entrance!
+            {raffleAddress ? (
+                <div>
+                    <button
+                        onClick={async function () {
+                            enterRaffle({
+                                onSuccess: handleSuccess,
+                                onError: (error) => console.log(error)
+                            })
+                        }}
+                    >
+                        Enter Raffle
+                    </button>
+                    Entrance Fee: {ethers.utils.formatUnits(entranceFee, "ether")} ETH
+                    Players: {numPlayers}
+                    Recent Winner: {recentWinner}
+                </div>
+            ) : (
+                <div>No Raffle Address Detected</div>
+            )}
+        </div>
+    )
+}
+
+
+*/
+
+/*
+
+// 18:01:13 ---> Reading & Displaying Contract Data --- i just added little changes to update the players state on the page
+
+/**
+ * @notice We would notice that when the transaction was successful, the player will still remain zero
+ * @notice on the page, which means it was not updated on the page
+ */
+
+import { useWeb3Contract } from "react-moralis"
+import { contractAddresses, abi } from "../constants"
+import { useMoralis } from "react-moralis"
+import { useEffect, useState } from "react"
+import { ethers } from "ethers"
+import { useNotification } from "web3uikit"
+
+export default function LotteryEntrance() {
+    const { chainId: chainIdHex, isWeb3Enabled } = useMoralis()
+
+    const chainId = parseInt(chainIdHex)
+    console.log(chainId)
+
+    const raffleAddress = chainId in contractAddresses ? contractAddresses[chainId][0] : null
+
+    const [entranceFee, setEntranceFee] = useState("0")
+    const [numPlayers, setNumPlayers] = useState("0")
+    const [recentWinner, setRecentWinner] = useState("0")
+
+    const dispatch = useNotification()
+
+    const { runContractFunction: enterRaffle } = useWeb3Contract({
+        abi: abi,
+        contractAddress: raffleAddress,
+        functionName: "enterRaffle",
+        params: {},
+        msgValue: entranceFee,
+    })
+
+    const { runContractFunction: getEntranceFee } = useWeb3Contract({
+        abi: abi,
+        contractAddress: raffleAddress,
+        functionName: "getEntranceFee",
+        params: {},
+    })
+
+    const { runContractFunction: getNumberOfPlayers } = useWeb3Contract({
+        abi: abi,
+        contractAddress: raffleAddress,
+        functionName: "getNumberOfPlayers",
+        params: {},
+    })
+    const { runContractFunction: getRecentWinner } = useWeb3Contract({
+        abi: abi,
+        contractAddress: raffleAddress,
+        functionName: "getRecentWinner",
+        params: {},
+    })
+
+    /**
+     * @dev we seperated the updateUi function from the useEffect hook
+     */
+    async function updateUi() {
+        const entranceFeeFromCall = (await getEntranceFee()).toString()
+        const numPlayersFromCall = (await getNumberOfPlayers()).toString()
+        const recentWinnerFromCall = await getRecentWinner()
+        setEntranceFee(entranceFeeFromCall)
+        setNumPlayers(numPlayersFromCall)
+        setRecentWinner(recentWinnerFromCall)
+    }
+
+    /**
+     * @dev we call the updateUi function, which will fetch the data
+     */
+    useEffect(() => {
+        if (isWeb3Enabled) {
+            updateUi()
+        }
+    }, [isWeb3Enabled])
+
+    /**
+     * @dev when the transaction is successful it will update the numPlayers state
+     */
+    const handleSuccess = async function(tx) {
+        await tx.wait(1)
+        handleNewNotification(tx)
+        updateUi()
+    }
+
+    const handleNewNotification = function () {
+        dispatch({
+            type: "info",
+            message: "Transaction Complete",
+            title: "Tx Notification",
+            position: "topR",
+            icon: "bell"
+        })
+    }
+    
+    /**
+     * @dev we display to the user the 'Players' and 'Recent Winner'
+     */
+    return (
+        <div>
+            Hi From Lottery Entrance!
+            {raffleAddress ? (
+                <div>
+                    <button
+                        onClick={async function () {
+                            enterRaffle({
+                                onSuccess: handleSuccess,
+                                onError: (error) => console.log(error)
+                            })
+                        }}
+                    >
+                        Enter Raffle
+                    </button>
+                    Entrance Fee: {ethers.utils.formatUnits(entranceFee, "ether")} ETH
+                    Players: {numPlayers}
+                    Recent Winner: {recentWinner}
+                </div>
+            ) : (
+                <div>No Raffle Address Detected</div>
+            )}
+        </div>
+    )
+}
+
+/*
+
+// 18:01:45 ---> Reading & Displaying Contract Data --- Now we want a way that the recent winner will update on the page
+
+/**
+ * @notice For the recent winner to update on the page, we have to go back to the backend of our code
+ * @notice and create a script that the mock the blockchain to have a winner 
+ * @notice We wont add any additional code here, the addition code will be added in the backend
+ */
+
+import { useWeb3Contract } from "react-moralis"
+import { contractAddresses, abi } from "../constants"
+import { useMoralis } from "react-moralis"
+import { useEffect, useState } from "react"
+import { ethers } from "ethers"
+import { useNotification } from "web3uikit"
+
+export default function LotteryEntrance() {
+    const { chainId: chainIdHex, isWeb3Enabled } = useMoralis()
+
+    const chainId = parseInt(chainIdHex)
+    console.log(chainId)
+
+    const raffleAddress = chainId in contractAddresses ? contractAddresses[chainId][0] : null
+
+    const [entranceFee, setEntranceFee] = useState("0")
+    const [numPlayers, setNumPlayers] = useState("0")
+    const [recentWinner, setRecentWinner] = useState("0")
+
+    const dispatch = useNotification()
+
+    const { runContractFunction: enterRaffle } = useWeb3Contract({
+        abi: abi,
+        contractAddress: raffleAddress,
+        functionName: "enterRaffle",
+        params: {},
+        msgValue: entranceFee,
+    })
+
+    const { runContractFunction: getEntranceFee } = useWeb3Contract({
+        abi: abi,
+        contractAddress: raffleAddress,
+        functionName: "getEntranceFee",
+        params: {},
+    })
+
+    const { runContractFunction: getNumberOfPlayers } = useWeb3Contract({
+        abi: abi,
+        contractAddress: raffleAddress,
+        functionName: "getNumberOfPlayers",
+        params: {},
+    })
+    const { runContractFunction: getRecentWinner } = useWeb3Contract({
+        abi: abi,
+        contractAddress: raffleAddress,
+        functionName: "getRecentWinner",
+        params: {},
+    })
+
+    async function updateUi() {
+        const entranceFeeFromCall = (await getEntranceFee()).toString()
+        const numPlayersFromCall = (await getNumberOfPlayers()).toString()
+        const recentWinnerFromCall = await getRecentWinner()
+        setEntranceFee(entranceFeeFromCall)
+        setNumPlayers(numPlayersFromCall)
+        setRecentWinner(recentWinnerFromCall)
+    }
+
+    useEffect(() => {
+        if (isWeb3Enabled) {
+            updateUi()
+        }
+    }, [isWeb3Enabled])
+
+    const handleSuccess = async function(tx) {
+        await tx.wait(1)
+        handleNewNotification(tx)
+        updateUi()
+    }
+
+    const handleNewNotification = function () {
+        dispatch({
+            type: "info",
+            message: "Transaction Complete",
+            title: "Tx Notification",
+            position: "topR",
+            icon: "bell"
+        })
+    }
+    
+    return (
+        <div>
+            Hi From Lottery Entrance!
+            {raffleAddress ? (
+                <div>
+                    <button
+                        onClick={async function () {
+                            enterRaffle({
+                                onSuccess: handleSuccess,
+                                onError: (error) => console.log(error)
+                            })
+                        }}
+                    >
+                        Enter Raffle
+                    </button>
+                    Entrance Fee: {ethers.utils.formatUnits(entranceFee, "ether")} ETH
+                    Players: {numPlayers}
+                    Recent Winner: {recentWinner}
+                </div>
+            ) : (
+                <div>No Raffle Address Detected</div>
+            )}
+        </div>
+    )
+}
+
+
+*/
+
+*/
